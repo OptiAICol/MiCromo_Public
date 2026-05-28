@@ -1,0 +1,552 @@
+================================================================================
+  MICROMO — INFORME EJECUTIVO DEL PROYECTO
+  Documento técnico completo: stack, fases, estructura y guía de replicación
+  Elaborado por: Victor — OptiAI, Medellín, Colombia
+  Fecha: 27/05/2026
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. RESUMEN EJECUTIVO
+────────────────────────────────────────────────────────────────────────────────
+
+MiCromo es una aplicación móvil para Android desarrollada como proyecto
+pedagógico por Victor (OptiAI, Medellín). Permite a coleccionistas del álbum
+Panini del Mundial FIFA 2026 gestionar sus láminas y coordinar intercambios
+con otros usuarios en Colombia.
+
+Problema que resuelve:
+  Los coleccionistas no tienen una plataforma centralizada para saber quién
+  tiene las láminas que necesitan, quién necesita las que sobran, y cómo
+  contactarse de forma segura.
+
+Solución:
+  - Álbum digital personal (tenidas, repetidas, faltantes)
+  - Mercado de intercambios con matching bidireccional automático
+  - Tablón de anuncios de venta con precio en COP
+  - Sistema de solicitudes, valoraciones e historial de intercambios
+  - Notificaciones push en tiempo real
+  - Modo oscuro, filtros por ciudad/departamento, moderación de usuarios
+
+Estado al 27/05/2026:
+  - 20 fases completadas
+  - App funcional en Android físico, verificada de extremo a extremo
+  - Publicada en Google Play Console (Alpha cerrada, en revisión por Google)
+  - Repositorio: https://github.com/OptiAICol/MiCromo.git
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. STACK TECNOLÓGICO
+────────────────────────────────────────────────────────────────────────────────
+
+FRONTEND — APP MÓVIL
+  Framework:       React Native 0.81.5 con Expo SDK 54
+  Lenguaje:        TypeScript estricto (sin JavaScript puro)
+  Navegación:      Expo Router ~6.0.23 (file-based, tabs + modales)
+  Estilos:         StyleSheet nativo de React Native + sistema de temas propio
+  Persistencia UI: @react-native-async-storage/async-storage 2.2.0
+  Notificaciones:  expo-notifications ~0.32.17
+  Splash screen:   expo-splash-screen ~31.0.13
+  Safe area:       react-native-safe-area-context ~5.6.0
+  Screens:         react-native-screens ~4.16.0
+  Constantes:      expo-constants ~18.0.13
+  Deep links:      expo-linking ~8.0.12
+
+BACKEND — BAAS (Backend as a Service)
+  Plataforma:      Supabase (PostgreSQL + Auth + Realtime + Storage)
+  Cliente:         @supabase/supabase-js ^2.106.0
+  Auth:            Email + Password (con recuperación por deep link)
+  Base de datos:   PostgreSQL con RLS (Row Level Security) en todas las tablas
+  Tiempo real:     Supabase Realtime (canales con filtros por usuario)
+  RPC segura:      Función SECURITY DEFINER para proteger datos de WhatsApp
+
+NOTIFICACIONES PUSH
+  Servicio:        Expo Push Service (API: https://exp.host/--/api/v2/push/send)
+  Firebase:        FCM v1 (Firebase Cloud Messaging)
+  Credenciales:    Service account key subida vía EAS Credentials
+  Config Android:  google-services.json en raíz del proyecto
+
+BUILD Y DISTRIBUCIÓN
+  Build tool:      EAS CLI v19.0.8 (Expo Application Services)
+  Build local:     Android SDK local (evita cuota cloud gratuita de EAS)
+  Distribución:    Google Play Console (Alpha cerrada → producción)
+  Formato APK:     APK (preview/testing) + AAB (producción/Play Store)
+
+ENTORNO DE DESARROLLO
+  OS:              CachyOS x86_64 (Linux)
+  Node.js:         v26.2.0 + npm 11.14.1
+  Java:            JDK 17 (openjdk) — Java 26 es incompatible con AGP
+  Android SDK:     ~/Android/Sdk
+                   build-tools;36.0.0 + platforms;android-36 + ndk;27.1.12297006
+  Shell:           fish — variables de entorno en ~/.config/fish/config.fish
+  Cuenta Expo:     optiaicolapps (expo.dev)
+  Cuenta Firebase: proyecto "micromo" (project_number: 793925933679)
+
+CONVENCIONES DE CÓDIGO
+  - Paquetes: SIEMPRE con npx expo install (nunca npm install directo)
+  - Comentarios: en español
+  - Commits: "fase X: descripción corta en español"
+  - Estilos: función crearEstilos(t: Tema) en cada screen (nunca StyleSheet a nivel módulo)
+  - No hay foto de perfil, no hay panel de admin, no hay Google Maps
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. ARQUITECTURA DE LA APLICACIÓN
+────────────────────────────────────────────────────────────────────────────────
+
+ESTRUCTURA DE CARPETAS
+
+  /app
+    _layout.tsx           Raíz: sesión Supabase + registro token push + TemaProvider
+    /(auth)/
+      _layout.tsx         Layout grupo autenticación
+      login.tsx           Login email + password
+      registro.tsx        Registro: nombre, ciudad (dropdown), teléfono + indicador país
+      recuperar.tsx       Solicitar recuperación de contraseña
+    /(tabs)/
+      _layout.tsx         Barra tabs personalizada + NotificacionesCtx + badge Perfil
+      index.tsx           Tab "Mercado" — matching bidireccional + filtros + búsqueda
+      album.tsx           Tab "Mi Álbum" — 980 láminas, chips por equipo + filtros
+      anuncios.tsx        Tab "Anuncios" — venta, búsqueda client-side, filtro ciudad
+      perfil.tsx          Tab "Perfil" — solicitudes, contactos, valoraciones, Realtime
+      editar-perfil.tsx   Edición de perfil (oculta de la barra)
+    solicitud.tsx         Enviar solicitud de intercambio
+    historial.tsx         Historial de intercambios completados
+    privacidad.tsx        Política de Privacidad
+    reset-password.tsx    Cambio de contraseña (deep link micromo://reset-password)
+
+  /components
+    ModalReporte.tsx      Modal reutilizable para reportar usuarios
+    ErrorRed.tsx          Pantalla de error de red con botón Reintentar
+
+  /constants
+    laminas.ts            49 secciones, 980 láminas (solo códigos)
+    ciudades.ts           Departamentos y municipios de Colombia
+
+  /hooks
+    useAuth.ts            Hook de autenticación (sesión Supabase)
+    useTheme.tsx          TemaProvider + useTheme() + interfaz Tema + paletas CLARO/OSCURO
+
+  /lib
+    supabase.ts           Cliente Supabase (URL + anon key desde variables de entorno)
+    notificaciones.ts     registrarTokenPush() + enviarNotificacion()
+
+  /supabase
+    /migrations           SQL de migraciones ejecutadas en Supabase
+
+BASE DE DATOS — TABLAS SUPABASE
+
+  perfiles
+    usuario_id UUID PK, nombre TEXT, ciudad TEXT, whatsapp TEXT, expo_push_token TEXT
+
+  laminas_usuario
+    usuario_id UUID, numero_lamina TEXT, estado TEXT, cantidad INT
+    UNIQUE(usuario_id, numero_lamina)
+    estado: 'tenida' | 'repetida' | 'faltante'
+    Las filas se crean con upsert al marcar cada lámina (no se pre-insertan)
+
+  ofertas_intercambio
+    id UUID, usuario_id UUID, laminas_ofrezco TEXT[], laminas_busco TEXT[],
+    busco_cualquier_faltante BOOLEAN, activo BOOLEAN, created_at TIMESTAMP
+    UNIQUE(usuario_id)
+
+  solicitudes
+    id UUID, solicitante_id UUID, receptor_id UUID,
+    laminas_solicitadas TEXT[], laminas_ofrecidas TEXT[], nota TEXT,
+    estado TEXT ('pendiente'|'aceptada'|'rechazada'),
+    completado_solicitante BOOLEAN DEFAULT false,
+    completado_receptor BOOLEAN DEFAULT false,
+    created_at TIMESTAMP
+
+  anuncios
+    id UUID, vendedor_id UUID, laminas TEXT[], descripcion TEXT,
+    precio NUMERIC, destacado BOOLEAN, activo BOOLEAN, created_at TIMESTAMP
+
+  valoraciones
+    id UUID PK, evaluador_id UUID, evaluado_id UUID, solicitud_id UUID,
+    puntos INT (1-5), comentario TEXT, created_at TIMESTAMPTZ
+    UNIQUE(evaluador_id, solicitud_id)
+
+  contactos_anuncio
+    id UUID PK, anuncio_id UUID, comprador_id UUID, vendedor_id UUID,
+    mensaje TEXT, estado TEXT ('pendiente'|'aceptada'|'rechazada'), created_at TIMESTAMPTZ
+
+  reportes
+    id UUID PK, reporter_id UUID, nombre_reportado TEXT,
+    telefono_reportado TEXT, motivo TEXT, created_at TIMESTAMPTZ
+
+SISTEMA DE TEMAS (MODO OSCURO)
+
+  Cada screen usa el patrón:
+    function crearEstilos(t: Tema) { return StyleSheet.create({ ... }); }
+    const { t } = useTheme();
+    const styles = useMemo(() => crearEstilos(t), [t]);
+
+  Paleta CLARO: fondo #f5f5f5 / tarjeta #ffffff / texto #222222
+  Paleta OSCURO: fondo #111111 / tarjeta #1e1e1e / texto #f0f0f0
+  Persistencia: AsyncStorage key 'micromo_tema'
+  Toggle: pill 42×24 en la tarjeta de perfil
+
+NOTIFICACIONES PUSH — CASOS CUBIERTOS
+
+  solicitud.tsx       → push al receptor al enviar solicitud de intercambio
+  perfil.tsx          → push al solicitante al aceptar su solicitud
+  perfil.tsx          → push al solicitante al rechazar su solicitud
+  perfil.tsx          → push al comprador al aceptar contacto de anuncio
+  perfil.tsx          → push al comprador al rechazar contacto de anuncio
+  perfil.tsx          → push al otro usuario al marcar intercambio como completado
+  anuncios.tsx        → push al vendedor al enviar solicitud de contacto
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. HISTORIAL DE FASES
+────────────────────────────────────────────────────────────────────────────────
+
+Fase 1  ✅  Expo SDK 54 corriendo en celular Android físico
+Fase 2  ✅  Expo Router instalado y navegación file-based configurada
+Fase 3  ✅  Autenticación con Supabase (login / registro / sesión persistente)
+Fase 4  ✅  Álbum de láminas: 980 chips interactivos, estados tenida/repetida/faltante
+Fase 5  ✅  Perfil de usuario con edición de nombre, ciudad y teléfono
+Fase 6  ✅  Publicación y gestión de anuncios de venta con precio en COP
+Fase 7  ✅  Mercado: matching bidireccional, tarjetas colapsables, filtro departamento
+Fase 8  ✅  Solicitudes de intercambio, contactos de anuncio, badge, push, valoraciones
+Fase 9  ✅  Modo oscuro con toggle minimalista persistido en AsyncStorage
+Fase 10 ✅  Moderación: reporte de usuarios desde cualquier pantalla
+Fase 11 ✅  Notificaciones push completas, búsqueda server-side, historial de intercambios
+Fase 12 ✅  Filtro departamento server-side en Mercado, Realtime en Perfil, GitHub
+Fase 13 ✅  Limpieza técnica: tabs, modelo de datos, consistencia de estilos, Realtime
+             Rename FiguCol → MiCromo, protección WhatsApp con RPC SECURITY DEFINER
+Fase 14 ✅  TOTAL_LAMINAS 969 → 980, badge álbum corregido, búsqueda server-side Mercado,
+             push al completar intercambio, paginación historial
+Fase 15 ✅  Filtro por ciudad con chip en header, componente ErrorRed reutilizable,
+             pantalla Política de Privacidad, limpieza de tokens push muertos
+Fase 16 ✅  expo-splash-screen instalado y controlado en _layout.tsx,
+             splash visible mientras Supabase resuelve sesión
+Fase 17 ✅  EAS Build configurado: eas.json, cuenta Expo, proyecto vinculado,
+             APK funcional en Android físico, splash ícono centrado en fondo #8B0000
+             Fixes: package-lock, react-dom peer dep, Hermes/supabase-js, crash vars entorno
+Fase 18 ✅  Audit RLS completo en todas las tablas, .select('id') defensivo en 4 UPDATE,
+             notificaciones push operativas: Firebase FCM v1 + google-services.json,
+             tokens ExponentPushToken confirmados en BD, SDK Android local para builds
+Fase 19 ✅  Verificación camino dorado completo con dos cuentas reales en dispositivos físicos:
+             intercambios, anuncios, contactos, valoraciones, historial y notificaciones push
+             sin errores en ningún flujo — app lista para distribución
+Fase 20 ✅  Google Play Console: formulario "Contenido de la app" completado,
+             13 cambios enviados a revisión, Prueba cerrada Alpha activa (v1.0.0, Colombia)
+             EN REVISIÓN por Google — pendiente: aprobación → 12 verificadores × 14 días
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. GUÍA DE REPLICACIÓN — PASO A PASO
+────────────────────────────────────────────────────────────────────────────────
+
+Esta guía permite replicar el proyecto desde cero en un entorno Linux (Ubuntu/Arch).
+
+─── PASO 1: ENTORNO BASE ────────────────────────────────────────────────────
+
+  Instalar Node.js v18+ (recomendado v20 LTS o superior):
+    curl -fsSL https://fnm.vercel.app/install | bash
+    fnm install 20
+
+  Configurar npm global sin sudo:
+    mkdir ~/.npm-global
+    npm config set prefix '~/.npm-global'
+    # Agregar ~/.npm-global/bin al PATH en tu shell (fish/bash/zsh)
+
+  Instalar EAS CLI globalmente:
+    npm install -g eas-cli
+
+  Instalar Java 17 (requerido por Android Gradle Plugin):
+    # Ubuntu:  sudo apt install openjdk-17-jdk
+    # Arch:    sudo pacman -S jdk17-openjdk
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+
+─── PASO 2: ANDROID SDK LOCAL ───────────────────────────────────────────────
+
+  Descargar cmdline-tools desde: https://developer.android.com/studio#command-line-tools-only
+  Extraer en ~/Android/Sdk/cmdline-tools/latest/
+
+  Instalar componentes necesarios:
+    export ANDROID_HOME=$HOME/Android/Sdk
+    sdkmanager "build-tools;36.0.0" "platforms;android-36" "ndk;27.1.12297006"
+    sdkmanager --licenses  # Aceptar todas las licencias
+
+  Agregar al PATH (fish: ~/.config/fish/config.fish):
+    set -x ANDROID_HOME $HOME/Android/Sdk
+    set -x JAVA_HOME /usr/lib/jvm/java-17-openjdk
+    fish_add_path $ANDROID_HOME/cmdline-tools/latest/bin
+    fish_add_path $ANDROID_HOME/platform-tools
+    fish_add_path $ANDROID_HOME/build-tools/36.0.0
+
+─── PASO 3: PROYECTO EXPO ───────────────────────────────────────────────────
+
+  Crear proyecto nuevo con Expo SDK 54:
+    npx create-expo-app@latest NombreApp --template blank-typescript
+    cd NombreApp
+
+  Instalar Expo Router:
+    npx expo install expo-router react-native-safe-area-context react-native-screens
+    npx expo install expo-linking expo-constants expo-status-bar
+
+  Configurar app.json para Expo Router:
+    "main": "expo-router/entry"  en package.json
+    "scheme": "nombreapp"  en app.json (requerido para deep links)
+
+─── PASO 4: SUPABASE ────────────────────────────────────────────────────────
+
+  1. Crear proyecto en https://supabase.com
+  2. Anotar: Project URL + anon key (pública)
+  3. Crear archivo .env en la raíz:
+       EXPO_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+       EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+  Instalar cliente:
+    npx expo install @supabase/supabase-js @react-native-async-storage/async-storage
+
+  Configurar cliente (lib/supabase.ts):
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    import { createClient } from '@supabase/supabase-js';
+    export const supabase = createClient(
+      process.env.EXPO_PUBLIC_SUPABASE_URL!,
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true } }
+    );
+
+  Crear tablas en Supabase SQL Editor (ver sección 3 de este documento).
+
+  Habilitar RLS en todas las tablas y crear políticas:
+    - perfiles: SELECT todos, INSERT/UPDATE propio usuario
+    - laminas_usuario: SELECT/INSERT/UPDATE/DELETE propio usuario
+    - ofertas_intercambio: SELECT activos, INSERT/UPDATE/DELETE propio usuario
+    - solicitudes: SELECT partes, INSERT solicitante, UPDATE receptor, DELETE solicitante
+    - anuncios: SELECT activos, INSERT/UPDATE/DELETE vendedor
+    - valoraciones: SELECT ambas partes, INSERT evaluador (1 por solicitud)
+    - contactos_anuncio: SELECT partes, INSERT comprador, UPDATE vendedor, DELETE partes
+    - reportes: INSERT usuario autenticado, SELECT ninguno (solo admin via Supabase)
+
+  Crear trigger para auto-crear perfil al registrar usuario:
+    CREATE OR REPLACE FUNCTION public.handle_new_user()
+    RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+      INSERT INTO public.perfiles (usuario_id, nombre, ciudad, whatsapp)
+      VALUES (new.id, '', '', '');
+      RETURN new;
+    END;
+    $$;
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+  Habilitar Realtime para tablas 'solicitudes' y 'contactos_anuncio':
+    Database → Replication → supabase_realtime → añadir ambas tablas
+
+  Configurar deep link de recuperación de contraseña:
+    Authentication → URL Configuration → Redirect URLs:
+    Agregar: nombreapp://reset-password
+
+─── PASO 5: NOTIFICACIONES PUSH ─────────────────────────────────────────────
+
+  1. Crear proyecto en https://console.firebase.google.com
+  2. Agregar app Android con el package ID (ej: com.empresa.nombreapp)
+  3. Descargar google-services.json → copiar a la raíz del proyecto Expo
+  4. En app.json agregar:
+       "android": { "googleServicesFile": "./google-services.json", ... }
+  5. En plugins de app.json agregar "expo-notifications"
+  6. Generar Service Account Key FCM v1:
+       Firebase → Configuración → Cuentas de servicio → Generar clave privada
+  7. Subir credencial a EAS:
+       eas credentials → Android → Push Notifications → Upload FCM key
+
+  Instalar:
+    npx expo install expo-notifications
+
+  IMPORTANTE: expo-notifications requiere un build nativo (APK/AAB).
+  No funciona en Expo Go. Usar require() dinámico para compatibilidad:
+    const Notifications = require('expo-notifications');
+
+─── PASO 6: CONFIGURAR EAS BUILD ────────────────────────────────────────────
+
+  Crear cuenta en https://expo.dev y hacer login:
+    npx expo login
+
+  Vincular proyecto:
+    eas init  (crea el projectId y lo agrega a app.json)
+
+  Crear eas.json en la raíz:
+    {
+      "cli": { "version": ">= 19.0.0" },
+      "build": {
+        "preview": {
+          "distribution": "internal",
+          "android": { "buildType": "apk" },
+          "env": {
+            "EXPO_PUBLIC_SUPABASE_URL": "https://...",
+            "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJ..."
+          }
+        },
+        "production": {
+          "distribution": "store",
+          "android": { "buildType": "app-bundle" },
+          "env": {
+            "EXPO_PUBLIC_SUPABASE_URL": "https://...",
+            "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJ..."
+          }
+        }
+      }
+    }
+
+  NOTA: Las variables de entorno van en eas.json porque EAS Build NO lee el .env local.
+  La anon key de Supabase tiene prefijo sb_publishable_ → es pública, seguro incluirla.
+
+  Build APK local (sin usar cuota cloud):
+    eas build --local --profile preview --platform android
+
+  Build AAB para Play Store:
+    eas build --local --profile production --platform android
+
+─── PASO 7: METRO CONFIG (FIX PARA SUPABASE + HERMES) ───────────────────────
+
+  Crear metro.config.js en la raíz del proyecto:
+    const { getDefaultConfig } = require('expo/metro-config');
+    const config = getDefaultConfig(__dirname);
+    config.resolver.unstable_enablePackageExports = false;
+    module.exports = config;
+
+  Esto evita que Metro use el .mjs de supabase-js (incompatible con el motor
+  JavaScript Hermes de React Native — falla con "Invalid expression encountered").
+
+─── PASO 8: SPLASH SCREEN ───────────────────────────────────────────────────
+
+  Instalar:
+    npx expo install expo-splash-screen
+
+  En app.json — sección plugins:
+    ["expo-splash-screen", {
+      "backgroundColor": "#COLOR",
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "imageWidth": 200
+    }]
+
+  En app/_layout.tsx:
+    import * as SplashScreen from 'expo-splash-screen';
+    SplashScreen.preventAutoHideAsync();   // a nivel módulo, fuera del componente
+    // Dentro del componente, cuando la sesión esté resuelta:
+    useEffect(() => { if (!loading) SplashScreen.hideAsync(); }, [loading]);
+
+─── PASO 9: GOOGLE PLAY CONSOLE ─────────────────────────────────────────────
+
+  1. Crear cuenta de desarrollador en https://play.google.com/console
+     (pago único de USD 25)
+
+  2. Crear aplicación nueva → completar todos los campos obligatorios
+
+  3. Completar "Contenido de la app":
+     - Clasificación de contenido: responder cuestionario
+     - Público objetivo: seleccionar edades
+     - Seguridad de los datos: declarar qué datos se recopilan y cómo se usan
+     - Anuncios: declarar si la app muestra anuncios (No en este caso)
+     - Política de privacidad: URL de la política publicada en la web
+     - Declaraciones adicionales: gubernamental/financiero/salud/ID publicidad
+
+  4. Configuración de la tienda:
+     - Descripción corta y larga
+     - Capturas de pantalla (mínimo 2 por tipo de dispositivo)
+     - Ícono de alta resolución (512×512 PNG)
+     - Categoría y datos de contacto
+
+  5. Subir el AAB en una pista de prueba (Alpha cerrada recomendada para iniciar)
+
+  6. Requisito para producción:
+     - Prueba Alpha: mínimo 12 testers que usen la app durante 14 días
+     - Luego solicitar acceso a producción desde Play Console
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. DECISIONES DE DISEÑO Y LECCIONES APRENDIDAS
+────────────────────────────────────────────────────────────────────────────────
+
+SIN BACKEND PROPIO
+  Se eligió Supabase como BaaS para evitar mantener servidores.
+  El RLS de PostgreSQL reemplaza la lógica de autorización del backend.
+  Decisión correcta para un proyecto de esta escala y equipo de 1 persona.
+
+FALTANTES CALCULADOS, NO ALMACENADOS
+  Las láminas "faltantes" se calculan siempre como:
+    TODOS_LOS_CODIGOS − (tenidas ∪ repetidas)
+  Nunca se guardan en BD con estado='faltante'. Esto evita inconsistencias
+  cuando el usuario marca/desmarca láminas.
+
+BÚSQUEDA EN ANUNCIOS: CLIENT-SIDE
+  PostgREST no soporta cast de columna array (::text) dentro de .or().
+  Solución: traer hasta 200 registros con .limit(200) y filtrar en cliente.
+  Para el volumen esperado de anuncios en Colombia, es suficiente.
+
+PROTECCIÓN DE WHATSAPP
+  El número de WhatsApp del vendedor NUNCA se expone en listados.
+  Solo es accesible mediante una función RPC SECURITY DEFINER que verifica
+  que exista un contacto_anuncio con estado='aceptada' entre las partes.
+  Esto protege la privacidad incluso si RLS falla.
+
+expo-notifications CON require() DINÁMICO
+  Se usa require() en vez de import estático para mantener compatibilidad
+  con Expo Go durante el desarrollo. En producción (APK) ambas formas
+  funcionan, pero require() es más seguro para evitar errores en dev.
+
+REALTIME CON FILTROS POR USUARIO
+  Los canales Supabase Realtime siempre filtran por usuario_id.
+  Nunca se escucha toda una tabla — solo los eventos relevantes para
+  el usuario autenticado. Reduce tráfico y mejora privacidad.
+
+HERMES + SUPABASE-JS
+  El bundler Metro usa por defecto el archivo .mjs de supabase-js,
+  que contiene comentarios webpackIgnore que Hermes no puede parsear.
+  metro.config.js con unstable_enablePackageExports = false fuerza
+  el uso del .cjs (CommonJS), compatible con Hermes.
+
+JAVA 17 PARA BUILDS
+  Android Gradle Plugin (AGP) es incompatible con Java 21+.
+  Usar siempre Java 17. En sistemas con múltiples versiones de Java,
+  exportar JAVA_HOME explícitamente antes de cada build.
+
+EAS BUILD Y VARIABLES DE ENTORNO
+  EAS Build en la nube NO lee el archivo .env local del proyecto.
+  Las variables deben declararse en el bloque "env" dentro de eas.json.
+  La anon key de Supabase (prefijo sb_publishable_) es segura para incluir
+  en eas.json ya que es una clave pública por diseño.
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. COSTOS Y SERVICIOS GRATUITOS UTILIZADOS
+────────────────────────────────────────────────────────────────────────────────
+
+  Supabase Free Tier          — BD, Auth, Realtime, Storage
+  Expo Free Tier              — EAS Build (con cuota mensual), OTA updates
+  Firebase Free Tier (Spark)  — FCM v1 notificaciones push
+  Google Play Console         — USD 25 (pago único, una sola vez)
+  GitHub Free                 — Repositorio privado/público
+  Netlify / Vercel / GitHub Pages — Hosting política de privacidad (HTML estático)
+
+  Costo total estimado del proyecto: USD 25 (solo la cuenta de Play Store)
+  Todos los demás servicios se usaron en sus niveles gratuitos.
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. PENDIENTES PARA PRODUCCIÓN PÚBLICA
+────────────────────────────────────────────────────────────────────────────────
+
+  ⏳ Google aprueba revisión Alpha (estimado 1–7 días desde 27/05/2026)
+  ⬜ 12 testers aceptan invitación y usan la app durante 14 días
+  ⬜ Solicitar acceso a producción desde Play Console
+  ⬜ Publicar versión de producción (AAB) en Play Store
+
+  DEUDA TÉCNICA (no urgente):
+  - Refactor useAuth → AuthProvider con Context (diferido)
+  - Panel de admin en la app (actualmente los reportes se revisan en Supabase)
+
+
+================================================================================
+  FIN DEL DOCUMENTO — MiCromo | Informe Ejecutivo | 27/05/2026
+  Victor — OptiAI, Medellín, Colombia
+  Repositorio: https://github.com/OptiAICol/MiCromo.git
+================================================================================

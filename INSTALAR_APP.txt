@@ -1,0 +1,120 @@
+================================================================================
+  MICROMO — GUÍA DE INSTALACIÓN EN ANDROID
+================================================================================
+
+Bienvenido a MiCromo, la app para gestionar e intercambiar láminas del álbum
+Panini del Mundial FIFA 2026.
+
+Esta guía te explica cómo instalar la app en tu celular Android paso a paso.
+
+────────────────────────────────────────────────────────────────────────────────
+REQUISITOS
+────────────────────────────────────────────────────────────────────────────────
+
+  · Celular Android (versión 8.0 o superior recomendada)
+  · Aproximadamente 80 MB de espacio libre
+  · Conexión a internet para usar la app
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 1 — DESCARGA EL ARCHIVO APK
+────────────────────────────────────────────────────────────────────────────────
+
+  Si ya tienes este documento en tu celular, el APK debería estar en la misma
+  carpeta. Asegúrate de tener el archivo que termina en ".apk".
+
+  Si aún no lo tienes, descárgalo desde:
+  https://drive.google.com/drive/folders/1uqv_gmYa7DjyDTyMrG0_JS9HaPivDstC?usp=sharing
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 2 — ABRE EL ARCHIVO APK
+────────────────────────────────────────────────────────────────────────────────
+
+  1. Abre la app "Archivos" o "Mis archivos" en tu celular
+  2. Ve a la carpeta "Descargas"
+  3. Toca el archivo que termina en ".apk" (ej: MiCromo.apk)
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 3 — PERMITE LA INSTALACIÓN DESDE FUENTES EXTERNAS
+────────────────────────────────────────────────────────────────────────────────
+
+  Android bloquea por defecto la instalación de apps descargadas fuera de
+  Google Play. Esto es normal y el proceso para habilitarlo es seguro.
+
+  Cuando aparezca el aviso de seguridad, sigue estos pasos según tu celular:
+
+  SAMSUNG / ONE UI:
+    · Toca "Configuración" en el aviso
+    · Activa "Permitir desde esta fuente"
+    · Toca la flecha atrás y luego "Instalar"
+
+  XIAOMI / MIUI:
+    · Ve a Configuración → Seguridad → Instalar apps desconocidas
+    · Selecciona el navegador o gestor de archivos que usaste
+    · Activa "Permitir desde esta fuente"
+    · Regresa e intenta instalar de nuevo
+
+  MOTOROLA / ANDROID PURO:
+    · Toca "Configuración" en el aviso
+    · Activa "Permitir desde esta fuente"
+    · Regresa e intenta instalar de nuevo
+
+  HUAWEI:
+    · Ve a Configuración → Seguridad → Más configuraciones de seguridad
+    · Activa "Instalar apps de fuentes desconocidas"
+    · Regresa e intenta instalar de nuevo
+
+  ⚠ Después de instalar puedes volver a desactivar esta opción si lo deseas.
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 4 — INSTALA LA APP
+────────────────────────────────────────────────────────────────────────────────
+
+  1. Toca "Instalar" y espera unos segundos
+  2. Cuando termine, toca "Abrir" para iniciar MiCromo
+     (también puedes encontrarla en tu menú de apps)
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 5 — CREA TU CUENTA
+────────────────────────────────────────────────────────────────────────────────
+
+  1. En la pantalla de inicio toca "Registrarse"
+  2. Ingresa tu nombre, correo electrónico y contraseña
+  3. Selecciona tu ciudad en el listado de municipios de Colombia
+  4. Agrega tu número de WhatsApp (se muestra a otros usuarios solo cuando
+     aceptas un intercambio o contacto de anuncio)
+  5. ¡Listo! Ya puedes empezar a marcar tus láminas y buscar intercambios
+
+────────────────────────────────────────────────────────────────────────────────
+PREGUNTAS FRECUENTES
+────────────────────────────────────────────────────────────────────────────────
+
+  ¿Es seguro instalar esta app?
+    Sí. El mensaje de "fuente desconocida" aparece porque la app no está en
+    Google Play todavía, pero el archivo es completamente seguro.
+
+  ¿Necesito internet para usarla?
+    Sí, la app requiere conexión para sincronizar láminas, ver el mercado
+    y enviar/recibir notificaciones.
+
+  ¿Funciona en iPhone?
+    No, esta versión es solo para Android.
+
+  ¿Cómo recupero mi contraseña?
+    En la pantalla de login toca "¿Olvidaste tu contraseña?" e ingresa tu
+    correo. Recibirás un enlace para restablecerla.
+
+  ¿Mis datos están seguros?
+    Sí. La app usa Supabase con cifrado en tránsito. Tu número de WhatsApp
+    solo es visible para usuarios con quienes hayas aceptado un intercambio.
+
+────────────────────────────────────────────────────────────────────────────────
+SOPORTE
+────────────────────────────────────────────────────────────────────────────────
+
+  Si tienes problemas con la instalación o el uso de la app, puedes escribir a:
+  optiai.com.co@gmail.com
+
+================================================================================
+  MiCromo — Desarrollado por Victor | OptiAI, Medellín, Colombia
+  Versión 1.0.0 | 2026
+================================================================================

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eliminar cuenta — MiCromo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #e63946;
+      padding: 32px 24px 20px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    header p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      margin-top: 4px;
+    }
+
+    main {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    .aviso {
+      background: #fff3f3;
+      border: 1px solid #f5c2c2;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+      font-size: 14px;
+      color: #7a1a1a;
+      line-height: 1.6;
+    }
+
+    .aviso strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    label span {
+      font-weight: 400;
+      color: #888;
+      font-size: 13px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: #222;
+      background: #fff;
+      margin-bottom: 20px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #e63946;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .confirmacion {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .confirmacion input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin: 2px 0 0;
+      accent-color: #e63946;
+      cursor: pointer;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button[type="submit"]:hover { opacity: 0.88; }
+    button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .mensaje {
+      display: none;
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .mensaje.exito {
+      background: #f0faf5;
+      border: 1px solid #a8dbc2;
+      color: #1a5c3a;
+    }
+
+    .mensaje.error {
+      background: #fff3f3;
+      border: 1px solid #f5c2c2;
+      color: #7a1a1a;
+    }
+
+    .mensaje strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    footer a {
+      color: #e63946;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Eliminar cuenta</h1>
+    <p>MiCromo · OptiAI</p>
+  </header>
+
+  <main>
+    <div class="aviso">
+      <strong>⚠️ Esta acción es permanente</strong>
+      Al confirmar, tu cuenta y todos tus datos (láminas, intercambios, anuncios y valoraciones)
+      serán eliminados de forma definitiva. No podrás recuperarlos.
+    </div>
+
+    <form id="formulario" novalidate>
+
+      <label for="email">Correo electrónico de tu cuenta</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="tucorreo@ejemplo.com"
+        required
+        autocomplete="email"
+      />
+
+      <label for="motivo">Motivo de la eliminación <span>(opcional)</span></label>
+      <select id="motivo" name="motivo">
+        <option value="">— Selecciona un motivo —</option>
+        <option value="Ya no uso la app">Ya no uso la app</option>
+        <option value="Problemas técnicos">Problemas técnicos</option>
+        <option value="Preocupaciones de privacidad">Preocupaciones de privacidad</option>
+        <option value="Otra razón">Otra razón</option>
+      </select>
+
+      <label for="comentario">Comentario adicional <span>(opcional)</span></label>
+      <textarea
+        id="comentario"
+        name="comentario"
+        placeholder="Cuéntanos algo más si lo deseas..."
+      ></textarea>
+
+      <div class="confirmacion">
+        <input type="checkbox" id="confirmar" name="confirmar" required />
+        <label for="confirmar" style="margin:0; font-weight:400; cursor:pointer;">
+          Entiendo que esta acción es irreversible y confirmo que deseo eliminar
+          mi cuenta y todos mis datos de MiCromo.
+        </label>
+      </div>
+
+      <button type="submit" id="btnEnviar">Solicitar eliminación de cuenta</button>
+
+      <div class="mensaje exito" id="msgExito">
+        <strong>✅ Solicitud recibida</strong>
+        Procesaremos la eliminación de tu cuenta en un plazo máximo de 7 días hábiles.
+        Recibirás una confirmación en tu correo electrónico.
+      </div>
+
+      <div class="mensaje error" id="msgError">
+        <strong>❌ Error al enviar</strong>
+        No pudimos procesar tu solicitud. Por favor intenta de nuevo o escríbenos
+        directamente a <a href="mailto:optiai.com.co@gmail.com">optiai.com.co@gmail.com</a>.
+      </div>
+
+    </form>
+
+    <footer>
+      <a href="privacidad.html">Política de Privacidad</a>
+      &nbsp;·&nbsp; MiCromo &middot; OptiAI &middot; Medellín, Colombia
+    </footer>
+  </main>
+
+  <script>
+    const form     = document.getElementById('formulario');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const msgExito = document.getElementById('msgExito');
+    const msgError = document.getElementById('msgError');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const email     = document.getElementById('email').value.trim();
+      const confirmar = document.getElementById('confirmar').checked;
+
+      if (!email) {
+        alert('Por favor ingresa tu correo electrónico.');
+        return;
+      }
+      if (!confirmar) {
+        alert('Debes confirmar que entiendes que la acción es irreversible.');
+        return;
+      }
+
+      btnEnviar.disabled = true;
+      btnEnviar.textContent = 'Enviando...';
+      msgExito.style.display = 'none';
+      msgError.style.display = 'none';
+
+      const payload = {
+        email:      email,
+        motivo:     document.getElementById('motivo').value || 'No especificado',
+        comentario: document.getElementById('comentario').value.trim() || '',
+        fecha:      new Date().toISOString(),
+        origen:     'formulario-web-micromo',
+      };
+
+      try {
+        const res = await fetch(
+          'https://n8n.optiaiservicios.com/webhook/formulariodescarga655748s6as',
+          {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+          }
+        );
+
+        if (res.ok) {
+          form.style.display = 'none';
+          msgExito.style.display = 'block';
+        } else {
+          throw new Error('Respuesta no OK: ' + res.status);
+        }
+      } catch {
+        btnEnviar.disabled = false;
+        btnEnviar.textContent = 'Solicitar eliminación de cuenta';
+        msgError.style.display = 'block';
+      }
+    });
+  </script>
+
+</body>
+</html>
