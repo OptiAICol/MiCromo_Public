@@ -45,3 +45,6 @@ yarn-error.*
 Descargables/
 *.apk
 *.aab
+
+# contexto local Claude Code (no va a GitHub público)
+CLAUDE.md
